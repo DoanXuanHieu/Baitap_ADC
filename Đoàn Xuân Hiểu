@@ -1,0 +1,50 @@
+#define F_CPU 8000000UL
+#include <avr/io.h>
+#include <util/delay.h>
+#include <string.h>
+unsigned int NhietDo;
+unsigned char led[12]={0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90,0x9C,0xC6};
+int read_adc(unsigned int a)
+{
+	ADMUX=a | (1<<REFS0);// Sử dụng kênh số a và chọn điện áp tham chiếu tại chân AVCC
+	ADCSRA|=(1<<ADSC); // khởi động qua trình chuyển đổi
+	while(!(ADCSRA&0x10));// khi bit ADIF len 1 thì báo hiệu đã chuyển đổi kết thúc và thoát khỏi vòng lăp vô hạn 0b00010000
+	return ADCW; // trả lại giá trị chuyển đổi
+}
+void hienthi(int x)
+{
+	int temp,ch,dv;
+	temp=x;
+	ch=temp/10;
+	dv=temp%10;
+	
+		PORTD=(1<<0);
+		PORTC=led[ch];
+		_delay_ms(2);
+		PORTD=(1<<1);
+		PORTC=led[dv];
+		_delay_ms(2);
+		PORTD=(1<<2);
+		PORTC=led[10];
+		_delay_ms(2);
+		PORTD=(1<<3);
+		PORTC=led[11];
+		_delay_ms(2);
+	
+}
+int main(void)
+{
+	ADMUX|=(1<<REFS0);// sử dụng điện áp  tham chiếu tại chân AVCC
+	ADCSRA=(1<<ADEN)|(1<<ADPS1)|(1<<ADPS0);// cho phép ADC hoạt động và
+	DDRC=0xff;// khai báo PORTC là output
+	DDRD=0b00001111;// khai báo 4 chân điều khiển 4 led 7 thanh là output
+	PORTC=0xff;
+	PORTD=0x00;
+	while (1)
+	{
+		
+		// read_adc(0) trả vê 1 số từ 0 đến 1023
+		NhietDo=(int)read_adc(0)*0.293;// chuyển đổi về nhiệt độ
+		hienthi(NhietDo);// GỌi hàm hiển thị
+	}
+}
